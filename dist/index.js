@@ -9687,12 +9687,13 @@ module.exports = class CommitActivity {
           //TODO could log this out
           return {};
         } else if (err.status === 409) {
-          if (err.message.toLowerCase().startsWith('git repository is empty')) {
-            return {};
-          } else {
-            throw err;
-          }
-        } else {
+    if (err.message.toLowerCase().includes('empty')) {
+        console.log(`Skipping empty repository: ${repoFullName}`);
+        return {};
+    } else {
+        throw err;
+    }
+} else {
           throw err;
         }
       })
