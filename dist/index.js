@@ -9954,16 +9954,17 @@ module.exports = class RepositoryActivity {
 
     console.log(`Building repository activity for: ${fullName}...`);
 
+try {
     const commits = await commitActivity.getCommitActivityFrom(owner, name, since);
     data[UserActivityAttributes.COMMITS] = commits[fullName];
 
-    const issues = await issueActivity.getIssueActivityFrom(owner, name, since)
+    const issues = await issueActivity.getIssueActivityFrom(owner, name, since);
     data[UserActivityAttributes.ISSUES] = issues[fullName];
 
     const issueComments = await issueActivity.getIssueCommentActivityFrom(owner, name, since);
     data[UserActivityAttributes.ISSUE_COMMENTS] = issueComments[fullName];
 
-    const prComments = await prActivity.getPullRequestCommentActivityFrom(owner, name, since)
+    const prComments = await prActivity.getPullRequestCommentActivityFrom(owner, name, since);
     data[UserActivityAttributes.PULL_REQUEST_COMMENTS] = prComments[fullName];
 
     const results = {};
@@ -9971,6 +9972,17 @@ module.exports = class RepositoryActivity {
 
     console.log(`  completed.`);
     return results;
+} catch (err) {
+    const errMsg = String(err && err.message ? err.message : '').toLowerCase();
+
+    if (errMsg.includes('git repository is empty') || errMsg.includes('empty')) {
+        console.log(`  skipped empty repository: ${fullName}`);
+        return {};
+    }
+
+    throw err;
+}
+``
 
     // Need to avoid triggering the chain so using async now
     //
