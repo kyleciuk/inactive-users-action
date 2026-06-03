@@ -9449,9 +9449,28 @@ const reposToProcess = repositories.slice(startIndex, endIndex);
 let activityResults = {};
 
 for (let idx = 0; idx < reposToProcess.length; idx++) {
-    const repoActivity = await self.repositoryClient.getActivity(reposToProcess[idx], since);
-    Object.assign(activityResults, repoActivity);
-}		
+    try {
+        const repo = reposToProcess[idx];
+
+        const repoActivity = await self.repositoryClient.getActivity(repo, since);
+        Object.assign(activityResults, repoActivity);
+
+    } catch (err) {
+        const errMsg = String(err && err.message ? err.message : '').toLowerCase();
+
+        if (errMsg.includes('empty')) {
+            console.log(`  skipped empty repository (outer): ${reposToProcess[idx].full_name}`);
+            continue;
+        }
+
+        if (err.status === 404 || errMsg.includes('not found')) {
+            console.log(`  skipped repo (404 outer): ${reposToProcess[idx].full_name}`);
+            continue;
+        }
+
+        throw err;
+    }
+}	
       const orgUsers = await self.organizationClient.findUsers(org);
 
     const userActivity = generateUserActivityData(activityResults);
