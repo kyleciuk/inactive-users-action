@@ -9433,6 +9433,25 @@ module.exports = class OrganizationUserActivity {
     const self = this;
 
     const repositories = await self.organizationClient.getRepositories(org)
+		
+// batching + sorting (your new code)
+repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+const batchSize = 500;
+const batchNumber = 1;
+
+const startIndex = (batchNumber - 1) * batchSize;
+const endIndex = startIndex + batchSize;
+
+const reposToProcess = repositories.slice(startIndex, endIndex);
+
+// activity collection
+let activityResults = {};
+
+for (let idx = 0; idx < reposToProcess.length; idx++) {
+    const repoActivity = await self.repositoryClient.getActivity(reposToProcess[idx], since);
+    Object.assign(activityResults, repoActivity);
+}		
       , orgUsers = await self.organizationClient.findUsers(org)
     ;
 
