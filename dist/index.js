@@ -9438,7 +9438,7 @@ module.exports = class OrganizationUserActivity {
 repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
 
 const batchSize = 500;
-const batchNumber = 1;
+const batchNumber = 2;
 
 const startIndex = (batchNumber - 1) * batchSize;
 const endIndex = startIndex + batchSize;
