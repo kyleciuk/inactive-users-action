@@ -23,7 +23,10 @@ async function run() {
     , token = getRequiredInput('token')
     , outputDir = getRequiredInput('outputDir')
     , organization = getRequiredInput('organization')
-    , maxRetries = getRequiredInput('octokit_max_retries')
+    , maxRetries = getRequiredInput('octokit_max_retries')	  
+	, batchSize = parseInt(core.getInput('batch_size') || '500', 10)
+	, batchNumber = parseInt(core.getInput('batch_number') || '1', 10)
+
   ;
 
   let fromDate;
