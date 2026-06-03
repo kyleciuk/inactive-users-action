@@ -30,6 +30,16 @@ inputs:
     required: true
     default: 15
 
+  batch_size:
+    description: Number of repositories to process in this run
+    required: false
+    default: 500
+
+  batch_number:
+    description: Which batch to process (1-based)
+    required: false
+    default: 1
+
 runs:
   using: node12
   main: dist/index.js
