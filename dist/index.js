@@ -9452,14 +9452,7 @@ for (let idx = 0; idx < reposToProcess.length; idx++) {
     const repoActivity = await self.repositoryClient.getActivity(reposToProcess[idx], since);
     Object.assign(activityResults, repoActivity);
 }		
-      orgUsers = await self.organizationClient.findUsers(org)
-    ;
-
-    const activityResults = {};
-    for(let idx = 0; idx< repositories.length; idx++) {
-      const repoActivity = await self.repositoryClient.getActivity(repositories[idx], since);
-      Object.assign(activityResults, repoActivity);
-    }
+      const orgUsers = await self.organizationClient.findUsers(org);
 
     const userActivity = generateUserActivityData(activityResults);
 
