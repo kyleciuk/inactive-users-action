@@ -9987,17 +9987,23 @@ try {
 
     console.log(`  completed.`);
     return results;
-} catch (err) {
+} } catch (err) {
     const errMsg = String(err && err.message ? err.message : '').toLowerCase();
 
-    if (errMsg.includes('git repository is empty') || errMsg.includes('empty')) {
+    // ✅ handle empty repo
+    if (errMsg.includes('empty')) {
         console.log(`  skipped empty repository: ${fullName}`);
+        return {};
+    }
+
+    // ✅ handle 404 repo issues/comments
+    if (err.status === 404) {
+        console.log(`  skipped repo (404 Not Found): ${fullName}`);
         return {};
     }
 
     throw err;
 }
-``
 
     // Need to avoid triggering the chain so using async now
     //
