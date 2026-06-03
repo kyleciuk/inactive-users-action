@@ -9987,7 +9987,7 @@ try {
 
     console.log(`  completed.`);
     return results;
-} } catch (err) {
+} catch (err) {
     const errMsg = String(err && err.message ? err.message : '').toLowerCase();
 
     // ✅ handle empty repo
