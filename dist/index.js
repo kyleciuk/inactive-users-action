@@ -9436,6 +9436,8 @@ module.exports = class OrganizationUserActivity {
 		
 // batching + sorting (your new code)
 repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+const core = require('@actions/core');
 	  
 const batchSize = parseInt(core.getInput('batch_size') || '500', 10);
 const batchNumber = parseInt(core.getInput('batch_number') || '1', 10);
