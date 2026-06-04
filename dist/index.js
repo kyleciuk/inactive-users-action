@@ -15,6 +15,9 @@ const fs = __webpack_require__(5747)
   , OrganizationActivity = __webpack_require__(6166)
   , githubClient = __webpack_require__(8724)
   , dateUtil = __webpack_require__(8087)
+  , batchSize = parseInt(core.getInput('batch_size') || '500', 10)
+  , batchNumber = parseInt(core.getInput('batch_number') || '1', 10)
+``
 ;
 
 async function run() {
@@ -44,8 +47,13 @@ async function run() {
     , orgActivity = new OrganizationActivity(octokit)
   ;
 
-  console.log(`Attempting to generate organization user activity data, this could take some time...`);
-  const userActivity = await orgActivity.getUserActivity(organization, fromDate);
+  console.log(`Attempting to generate organization user activity data, this could take some time...`);  
+const userActivity = await orgActivity.getUserActivity(
+  organization,
+  fromDate,
+  batchSize,
+  batchNumber
+);
   saveIntermediateData(outputDir, userActivity.map(activity => activity.jsonPayload));
 
   // Convert the JavaScript objects into a JSON payload so it can be output
