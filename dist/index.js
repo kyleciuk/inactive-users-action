@@ -9436,11 +9436,21 @@ module.exports = class OrganizationUserActivity {
 		
 // batching + sorting (your new code)
 repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
-
+	  
+const batchSize = parseInt(core.getInput('batch_size') || '500', 10);
+const batchNumber = parseInt(core.getInput('batch_number') || '1', 10);
+	  
 const startIndex = (batchNumber - 1) * batchSize;
 const endIndex = startIndex + batchSize;
-
+  
+console.log(`Processing batch ${batchNumber}`);
+console.log(`Start index: ${startIndex}`);
+console.log(`End index: ${endIndex}`);
+console.log(`Total repositories: ${repositories.length}`);
+	  
 const reposToProcess = repositories.slice(startIndex, endIndex);
+
+console.log(`Repos in this batch: ${reposToProcess.length}`);
 
 // activity collection
 let activityResults = {};
