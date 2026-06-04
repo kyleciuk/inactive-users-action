@@ -7,6 +7,6 @@ inputs:
   organization:
     required: true
 
-runs:
+runs: 
   using: node20
   main: dist/index.js
