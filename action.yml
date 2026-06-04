@@ -1,106 +1,49 @@
-name: User Activity Audit
+name: GitHub Organization User Activity Report
+description: Generates a summary of user activity for an organization
+author: Peter Murray
 
-on:
-  workflow_dispatch:
+inputs:
+  token:
+    description: GitHub Access Token with permissions for accesing Repositories and Organization data.
+    required: true
 
-jobs:
-  batch1:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run batch 1
-        id: audit
-        uses: kyleciuk/inactive-users-action@main
-        with:
-          token: ${{ secrets.ORG_AUDIT_TOKEN }}
-          organization: dteenergy
-          activity_days: 180
-          batch_number: 1
-          batch_size: 500
+  outputDir:
+    description: The output directory for the generated report(s).
+    required: true
+    default: ${{ github.workspace }}
 
-      - name: Save batch 1 output
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-batch-1
-          path: ${{ steps.audit.outputs.report_csv }}
+  organization:
+    description: The organization that is to be processed to detect inactive users
+    required: true
 
-  wait1:
-    needs: batch1
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait 1 hour before batch 2
-        run: sleep 3600
+  since:
+    description: A date time in ISO 8601 format YYYY-MM-DDTHH:mm:ss. If specified activity_days will be ignored.
+    required: false
 
-  batch2:
-    needs: wait1
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run batch 2
-        id: audit
-        uses: kyleciuk/inactive-users-action@main
-        with:
-          token: ${{ secrets.ORG_AUDIT_TOKEN }}
-          organization: dteenergy
-          activity_days: 180
-          batch_number: 2
-          batch_size: 500
+  activity_days:
+    description: The number of days in the past to check for activity, this will be ignored if 'since' parameter is used.
+    required: true
+    default: 30
 
-      - name: Save batch 2 output
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-batch-2
-          path: ${{ steps.audit.outputs.report_csv }}
+  octokit_max_retries:
+    description: Maximum number of retires when using the Octokit REST API
+    required: true
+    default: 15
 
-  wait2:
-    needs: batch2
-    runs-on: ubuntu-latest
-    steps:
-      - name: Wait 1 hour before batch 3
-        run: sleep 3600
+  batch_size:
+    description: Number of repositories to process in this run
+    required: false
+    default: 500
 
-  batch3:
-    needs: wait2
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run batch 3
-        id: audit
-        uses: kyleciuk/inactive-users-action@main
-        with:
-          token: ${{ secrets.ORG_AUDIT_TOKEN }}
-          organization: dteenergy
-          activity_days: 180
-          batch_number: 3
-          batch_size: 500
+  batch_number:
+    description: Which batch to process (1-based)
+    required: false
+    default: 1
 
-      - name: Save batch 3 output
-        uses: actions/upload-artifact@v4
-        with:
-          name: report-batch-3
-          path: ${{ steps.audit.outputs.report_csv }}
+runs:
+  using: node12
+  main: dist/index.js
 
- merge_reports:
-    needs: batch3
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Download batch artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: reports
-
-      - name: Merge CSV files
-        run: |
-          cd reports
-
-          # Create merged file with header from first file
-          head -n 1 report-batch-1/organization_user_activity.csv > merged.csv
-
-          # Append all data rows (skip headers)
-          tail -n +2 report-batch-1/organization_user_activity.csv >> merged.csv
-          tail -n +2 report-batch-2/organization_user_activity.csv >> merged.csv
-          tail -n +2 report-batch-3/organization_user_activity.csv >> merged.csv
-
-      - name: Upload merged file
-        uses: actions/upload-artifact@v4
-        with:
-          name: merged-report
-          path: reports/merged.csv
+branding:
+  icon: users
+  color: orange
