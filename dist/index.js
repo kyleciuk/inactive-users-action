@@ -9437,16 +9437,13 @@ module.exports = class OrganizationUserActivity {
     return this._repositoryActivity;
   }
 
-  async getUserActivity(org, since) {
+  async getUserActivity(org, since, batchSize = 500, batchNumber = 1) {
     const self = this;
 
     const repositories = await self.organizationClient.getRepositories(org)
 		
 // batching + sorting (your new code)
 repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
-	  
-const batchSize = parseInt(core.getInput('batch_size') || '500', 10);
-const batchNumber = parseInt(core.getInput('batch_number') || '1', 10);
 	  
 const startIndex = (batchNumber - 1) * batchSize;
 const endIndex = startIndex + batchSize;
