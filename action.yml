@@ -1,12 +1,106 @@
-name: Inactive Users Action
-description: Generates user activity report
+name: User Activity Audit
 
-inputs:
-  token:
-    required: true
-  organization:
-    required: true
+on:
+  workflow_dispatch:
 
-runs: 
-  using: node20
-  main: dist/index.js
+jobs:
+  batch1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run batch 1
+        id: audit
+        uses: kyleciuk/inactive-users-action@main
+        with:
+          token: ${{ secrets.ORG_AUDIT_TOKEN }}
+          organization: dteenergy
+          activity_days: 180
+          batch_number: 1
+          batch_size: 500
+
+      - name: Save batch 1 output
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-batch-1
+          path: ${{ steps.audit.outputs.report_csv }}
+
+  wait1:
+    needs: batch1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait 1 hour before batch 2
+        run: sleep 3600
+
+  batch2:
+    needs: wait1
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run batch 2
+        id: audit
+        uses: kyleciuk/inactive-users-action@main
+        with:
+          token: ${{ secrets.ORG_AUDIT_TOKEN }}
+          organization: dteenergy
+          activity_days: 180
+          batch_number: 2
+          batch_size: 500
+
+      - name: Save batch 2 output
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-batch-2
+          path: ${{ steps.audit.outputs.report_csv }}
+
+  wait2:
+    needs: batch2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait 1 hour before batch 3
+        run: sleep 3600
+
+  batch3:
+    needs: wait2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run batch 3
+        id: audit
+        uses: kyleciuk/inactive-users-action@main
+        with:
+          token: ${{ secrets.ORG_AUDIT_TOKEN }}
+          organization: dteenergy
+          activity_days: 180
+          batch_number: 3
+          batch_size: 500
+
+      - name: Save batch 3 output
+        uses: actions/upload-artifact@v4
+        with:
+          name: report-batch-3
+          path: ${{ steps.audit.outputs.report_csv }}
+
+ merge_reports:
+    needs: batch3
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download batch artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+
+      - name: Merge CSV files
+        run: |
+          cd reports
+
+          # Create merged file with header from first file
+          head -n 1 report-batch-1/organization_user_activity.csv > merged.csv
+
+          # Append all data rows (skip headers)
+          tail -n +2 report-batch-1/organization_user_activity.csv >> merged.csv
+          tail -n +2 report-batch-2/organization_user_activity.csv >> merged.csv
+          tail -n +2 report-batch-3/organization_user_activity.csv >> merged.csv
+
+      - name: Upload merged file
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-report
+          path: reports/merged.csv
