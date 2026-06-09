@@ -9529,6 +9529,11 @@ async function process(repo, values, activityType) {
 
       const accountCreated = new Date(userDetails.data.created_at);
 
+	  
+const daysSinceCreated = Math.floor(
+  (Date.now() - accountCreated) / (1000 * 60 * 60 * 24)
+);
+		
       const cutoffDate = new Date();
       cutoffDate.setMonth(cutoffDate.getMonth() - 6);
 
@@ -9541,6 +9546,7 @@ async function process(repo, values, activityType) {
 }
 
       results[login].increment(activityType, repo, values[login]);
+	  results[login].daysSinceCreated = daysSinceCreated;
 
     }
   }
