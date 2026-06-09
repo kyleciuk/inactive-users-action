@@ -57,11 +57,21 @@ const userActivity = await orgActivity.getUserActivity(
 );
   saveIntermediateData(outputDir, userActivity.map(activity => activity.jsonPayload));
 
-  // Convert the JavaScript objects into a JSON payload so it can be output
-  console.log(`User activity data captured, generating report...`);
-  const data = userActivity.map(activity => activity.jsonPayload)
-    , csv = json2csv.parse(data, {})
-  ;
+	const data = userActivity.map(activity => activity.jsonPayload)
+, csv = json2csv.parse(data, {
+    fields: [
+      'login',
+      'email',
+      'isActive',
+      'commits',
+      'issues',
+      'issueComments',
+      'prComments',
+      'isNewUser',
+      'daysSinceCreated'
+    ]
+  })
+;
 
   const file = path.join(outputDir, 'organization_user_activity.csv');
   fs.writeFileSync(file, csv);
