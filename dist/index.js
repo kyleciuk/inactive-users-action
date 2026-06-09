@@ -9449,7 +9449,8 @@ module.exports = class OrganizationUserActivity {
   }
 
   async getUserActivity(org, since, batchSize = 500, batchNumber = 1) {
-    const self = this;
+    const userCache = {};
+	  const self = this;
 
     const repositories = await self.organizationClient.getRepositories(org)
 		
