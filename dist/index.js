@@ -9514,17 +9514,37 @@ function generateUserActivityData(data) {
   // Use an object to ensure unique user to activity based on user key
   const results = {};
 
-  function process(repo, values, activityType) {
-    if (values) {
-      Object.keys(values).forEach(login => {
-        if (!results[login]) {
-          results[login] = new UserActivity(login);
-        }
+async function process(repo, values, activityType) {
+  if (values) {
+    for (const login of Object.keys(values)) {
+      let userDetails;
+      if (userCache[login]) {
+        userDetails = userCache[login];
+      } else {
+        userDetails = await githubClient.users.getByUsername({
+          username: login
+        });
+        userCache[login] = userDetails;
+      }
 
-        results[login].increment(activityType, repo, values[login]);
-      })
+      const accountCreated = new Date(userDetails.data.created_at);
+
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+
+      const isNewUser = accountCreated > cutoffDate;
+
+      if (!results[login]) {
+  results[login] = new UserActivity(login);
+
+  results[login].isNewUser = isNewUser ? 'TRUE' : 'FALSE';
+}
+
+      results[login].increment(activityType, repo, values[login]);
+
     }
   }
+}
 
   Object.keys(data).forEach(repo => {
     const activity = data[repo];
