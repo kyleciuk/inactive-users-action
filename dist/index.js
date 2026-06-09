@@ -18,6 +18,8 @@ const fs = __webpack_require__(5747)
   , batchSize = parseInt(core.getInput('batch_size') || '500', 10)
   , batchNumber = parseInt(core.getInput('batch_number') || '1', 10)
 ;
+	
+const userCache = {};
 
 async function run() {
   const since = core.getInput('since')
