@@ -9524,6 +9524,7 @@ function generateUserActivityData(data) {
   const results = {};
 
 async function process(repo, values, activityType) {
+	const userCache = {}
   if (values) {
     for (const login of Object.keys(values)) {
       let userDetails;
