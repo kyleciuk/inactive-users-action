@@ -9525,7 +9525,6 @@ function generateUserActivityData(data) {
 
 async function process(repo, values, activityType, githubClient) {
 	const userCache = {}
-	const githubClient = this.repositoryActivity.octokit;
   if (values) {
     for (const login of Object.keys(values)) {
       let userDetails;
