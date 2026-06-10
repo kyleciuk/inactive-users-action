@@ -9531,7 +9531,7 @@ async function process(repo, values, activityType, githubClient) {
       if (userCache[login]) {
         userDetails = userCache[login];
       } else {
-        userDetails = await self.organizationClient.octokit.users.getByUsername({
+        userDetails = await githubClient.users.getByUsername({
           username: login
         });
         userCache[login] = userDetails;
