@@ -18,8 +18,6 @@ const fs = __webpack_require__(5747)
   , batchSize = parseInt(core.getInput('batch_size') || '500', 10)
   , batchNumber = parseInt(core.getInput('batch_number') || '1', 10)
 ;
-	
-const userCache = {};
 
 async function run() {
   const since = core.getInput('since')
@@ -57,21 +55,11 @@ const userActivity = await orgActivity.getUserActivity(
 );
   saveIntermediateData(outputDir, userActivity.map(activity => activity.jsonPayload));
 
-	const data = userActivity.map(activity => activity.jsonPayload)
-, csv = json2csv.parse(data, {
-    fields: [
-      'login',
-      'email',
-      'isActive',
-      'commits',
-      'issues',
-      'issueComments',
-      'prComments',
-      'isNewUser',
-      'daysSinceCreated'
-    ]
-  })
-;
+  // Convert the JavaScript objects into a JSON payload so it can be output
+  console.log(`User activity data captured, generating report...`);
+  const data = userActivity.map(activity => activity.jsonPayload)
+    , csv = json2csv.parse(data, {})
+  ;
 
   const file = path.join(outputDir, 'organization_user_activity.csv');
   fs.writeFileSync(file, csv);
@@ -9449,8 +9437,7 @@ module.exports = class OrganizationUserActivity {
   }
 
   async getUserActivity(org, since, batchSize = 500, batchNumber = 1) {
-    const userCache = {};
-	  const self = this;
+    const self = this;
 
     const repositories = await self.organizationClient.getRepositories(org)
 		
@@ -9525,43 +9512,17 @@ function generateUserActivityData(data) {
   // Use an object to ensure unique user to activity based on user key
   const results = {};
 
-async function process(repo, values, activityType) {
-  if (values) {
-    for (const login of Object.keys(values)) {
-      let userDetails;
-      if (userCache[login]) {
-        userDetails = userCache[login];
-      } else {
-        userDetails = await githubClient.users.getByUsername({
-          username: login
-        });
-        userCache[login] = userDetails;
-      }
+  function process(repo, values, activityType) {
+    if (values) {
+      Object.keys(values).forEach(login => {
+        if (!results[login]) {
+          results[login] = new UserActivity(login);
+        }
 
-      const accountCreated = new Date(userDetails.data.created_at);
-
-	  
-const daysSinceCreated = Math.floor(
-  (Date.now() - accountCreated) / (1000 * 60 * 60 * 24)
-);
-		
-      const cutoffDate = new Date();
-      cutoffDate.setMonth(cutoffDate.getMonth() - 6);
-
-      const isNewUser = accountCreated > cutoffDate;
-
-      if (!results[login]) {
-  results[login] = new UserActivity(login);
-
-  results[login].isNewUser = isNewUser ? 'TRUE' : 'FALSE';
-}
-
-      results[login].increment(activityType, repo, values[login]);
-	  results[login].daysSinceCreated = daysSinceCreated;
-
+        results[login].increment(activityType, repo, values[login]);
+      })
     }
   }
-}
 
   Object.keys(data).forEach(repo => {
     const activity = data[repo];
