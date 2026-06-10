@@ -18,6 +18,8 @@ const fs = __webpack_require__(5747)
   , batchSize = parseInt(core.getInput('batch_size') || '500', 10)
   , batchNumber = parseInt(core.getInput('batch_number') || '1', 10)
 ;
+	
+const userCache = {};
 
 async function run() {
   const since = core.getInput('since')
@@ -9447,7 +9449,7 @@ module.exports = class OrganizationUserActivity {
   }
 
   async getUserActivity(org, since, batchSize = 500, batchNumber = 1) {
-	  const userCache = {};
+    const userCache = {};
 	  const self = this;
 
     const repositories = await self.organizationClient.getRepositories(org)
@@ -9523,15 +9525,14 @@ function generateUserActivityData(data) {
   // Use an object to ensure unique user to activity based on user key
   const results = {};
 
-async function process(repo, values, activityType, githubClient) {
-	const userCache = {}
+async function process(repo, values, activityType) {
   if (values) {
     for (const login of Object.keys(values)) {
       let userDetails;
       if (userCache[login]) {
         userDetails = userCache[login];
       } else {
-        userDetails = await this.repositoryClient.octokit.users.getByUsername({
+        userDetails = await githubClient.users.getByUsername({
           username: login
         });
         userCache[login] = userDetails;
