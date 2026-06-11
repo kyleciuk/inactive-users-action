@@ -66,7 +66,13 @@ const userActivity = await orgActivity.getUserActivity(
   console.log(`User Activity Report Generated: ${file}`);
 
   // Expose the output csv file
-  core.setOutput('report_csv', file);
+  
+const fs = require('fs');
+
+fs.appendFileSync(
+  process.env.GITHUB_OUTPUT,
+  `report_csv=${file}\n`
+);
 }
 
 async function execute() {
