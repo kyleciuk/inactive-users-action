@@ -93,7 +93,12 @@ function saveIntermediateData(directory, data) {
   try {
     const file = path.join(directory, 'organization_user_activity.json');
     fs.writeFileSync(file, JSON.stringify(data));
-    core.setOutput('report_json', file);
+   
+	  fs.appendFileSync(
+  process.env.GITHUB_OUTPUT,
+  `report_json=${file}\n`
+);
+
   } catch (err) {
     console.error(`Failed to save intermediate data: ${err}`);
   }
