@@ -61,13 +61,14 @@ const userActivity = await orgActivity.getUserActivity(
     , csv = json2csv.parse(data, {})
   ;
 
+	const fs = require('fs');
+	
   const file = path.join(outputDir, 'organization_user_activity.csv');
   fs.writeFileSync(file, csv);
   console.log(`User Activity Report Generated: ${file}`);
 
   // Expose the output csv file
-  
-const fs = require('fs');
+
 
 fs.appendFileSync(
   process.env.GITHUB_OUTPUT,
