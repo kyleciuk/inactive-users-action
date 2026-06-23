@@ -82,7 +82,7 @@ async function getReviews(users) {
   const results = await octokit.paginate(
     octokit.search.issuesAndPullRequests,
     {
-      q: `org:${org} reviewed-by:* updated:>=${since}`,
+      q: `org:${org} is:pr reviewed-by:* updated:>=${since}`,
       per_page: 100
     }
   );
