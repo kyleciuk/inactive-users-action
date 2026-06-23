@@ -9617,7 +9617,8 @@ module.exports = class UserActivity {
             result = {
                 login: this.login,
                 email: this.email,
-                isActive: this.isActive
+                isActive: this.isActive,
+				pullRequestReviews: this.pullRequestReviews
             };
 
         Object.values(UserActivityAttributes).forEach(type => {
