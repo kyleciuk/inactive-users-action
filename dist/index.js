@@ -1,7 +1,10 @@
 const { Octokit } = require("@octokit/rest");
 const fs = require("fs");
 
-const token = process.env.GITHUB_TOKEN || process.env.PAT;
+const token =
+  process.env.GITHUB_TOKEN ||
+  process.env.INPUT_TOKEN ||
+  process.env.ORG_AUDIT_TOKEN;
 const org = process.env.ORG_NAME;
 const days = parseInt(process.env.DAYS || "90");
 
