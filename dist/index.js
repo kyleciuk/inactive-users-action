@@ -9486,7 +9486,7 @@ const repoActivity = await self.repositoryClient.getActivity(repo, since);
 Object.assign(activityResults, repoActivity);
 
 try {
-  const pulls = await self.repositoryClient.octokit.pulls.list({
+  const pulls = await reviewClient.pulls.list({
     owner: org,
     repo: repo.name,
     state: "all",
