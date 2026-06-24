@@ -9472,46 +9472,36 @@ console.log(`Repos in this batch: ${reposToProcess.length}`);
 // activity collection
 let activityResults = {};
 
-const reviewClient = self.repositoryClient;
+const pulls = await self.repositoryClient.client.pulls.list({
+  owner: org,
+  repo: repo.name,
+  state: "all",
+  per_page: 100
+});
 
-for (let idx = 0; idx < reposToProcess.length; idx++) {
-    try {
-const repo = reposToProcess[idx];
-
-const repoActivity = await self.repositoryClient.getActivity(repo, since);
-Object.assign(activityResults, repoActivity);
-
-try {
-  const pulls = await self.repositoryClient.client.pulls.listReviews({
+for (const pr of pulls.data) {
+  const reviews = await self.repositoryClient.client.pulls.listReviews({
     owner: org,
     repo: repo.name,
-    state: "all",
+    pull_number: pr.number,
     per_page: 100
   });
 
-  for (const pr of pulls.data) {
-    const reviews = await self.octokit.pulls.listReviews({
-      owner: org,
-      repo: repo.name,
-      pull_number: pr.number,
-      per_page: 100
-    });
+  reviews.data.forEach(review => {
+    const login = review.user?.login;
+    if (!login) return;
 
-    reviews.data.forEach(review => {
-      const login = review.user?.login;
-      if (!login) return;
+    if (!activityResults[login]) {
+      activityResults[login] = new UserActivity(login);
+    }
 
-      if (!activityResults[login]) {
-        activityResults[login] = new UserActivity(login);
-      }
-
-      activityResults[login].increment(
-        UserActivityAttributes.PULL_REQUEST_REVIEWS,
-        repo.name,
-        1
-      );
-    });
-  }
+    activityResults[login].increment(
+      UserActivityAttributes.PULL_REQUEST_REVIEWS,
+      repo.name,
+      1
+    );
+  });
+}
 
 } catch (err) {
   console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
