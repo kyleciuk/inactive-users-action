@@ -9472,41 +9472,46 @@ console.log(`Repos in this batch: ${reposToProcess.length}`);
 // activity collection
 let activityResults = {};
 
-try {
-  const pulls = await self.repositoryClient.client.pulls.list({
-    owner: org,
-    repo: reposToProcess[idx].name,
-    state: "all",
-    per_page: 100
-  });
+for (let idx = 0; idx < reposToProcess.length; idx++) {
+  const repo = reposToProcess[idx]; 
 
-  for (const pr of pulls.data) {
-    const reviews = await self.repositoryClient.client.pulls.listReviews({
+  try {
+    const pulls = await self.repositoryClient.client.pulls.list({
       owner: org,
-      repo: reposToProcess[idx].name,
-      pull_number: pr.number,
+      repo: repo.name, 
+      state: "all",
       per_page: 100
     });
 
-    reviews.data.forEach(review => {
-      const login = review.user?.login;
-      if (!login) return;
+    for (const pr of pulls.data) {
+      const reviews = await self.repositoryClient.client.pulls.listReviews({
+        owner: org,
+        repo: repo.name, 
+        pull_number: pr.number,
+        per_page: 100
+      });
 
-      if (!activityResults[login]) {
-        activityResults[login] = new UserActivity(login);
-      }
+      reviews.data.forEach(review => {
+        const login = review.user?.login;
+        if (!login) return;
 
-      activityResults[login].increment(
-        UserActivityAttributes.PULL_REQUEST_REVIEWS,
-        reposToProcess[idx].name,
-        1
-      );
-    });
+        if (!activityResults[login]) {
+          activityResults[login] = new UserActivity(login);
+        }
+
+        activityResults[login].increment(
+          UserActivityAttributes.PULL_REQUEST_REVIEWS,
+          repo.name, 
+          1
+        );
+      });
+    }
+
+  } catch (err) {
+    console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
   }
-
-} catch (err) {
-  console.log(`PR review fetch failed for ${reposToProcess[idx].name}: ${err.message}`);
 }
+``
 
 const orgUsers = await self.organizationClient.findUsers(org);
 
