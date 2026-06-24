@@ -10067,35 +10067,6 @@ module.exports = class RepositoryActivity {
 
 /***/ }),
 
-    // Need to avoid triggering the chain so using async now
-    //
-    // return commitActivity.getCommitActivityFrom(owner, name, since)
-    //   .then(commits => {
-    //     data[UserActivityAttributes.COMMITS] = commits[fullName];
-    //     return issueActivity.getIssueActivityFrom(owner, name, since);
-    //   })
-    //   .then(issues => {
-    //     data[UserActivityAttributes.ISSUES] = issues[fullName];
-    //     return issueActivity.getIssueCommentActivityFrom(owner, name, since);
-    //   })
-    //   .then(issueComments => {
-    //     data[UserActivityAttributes.ISSUE_COMMENTS] = issueComments[fullName];
-    //     return prActivity.getPullRequestCommentActivityFrom(owner, name, since);
-    //   })
-    //   .then(prComments => {
-    //     data[UserActivityAttributes.PULL_REQUEST_COMMENTS]= prComments[fullName];
-    //
-    //     const results = {}
-    //     results[fullName] = data;
-    //     return results;
-    //   });
-  }
-}
-
-
-
-
-/***/ }),
 
 /***/ 8724:
 /***/ ((module, __unused_webpack_exports, __webpack_require__) => {
