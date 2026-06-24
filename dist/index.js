@@ -9909,7 +9909,7 @@ module.exports = class Organization {
       .then(repos => {
         console.log(`Processing ${repos.length} repositories`);
         return repos.map(repo => { return {
-          name: reposToProcess[idx].name,
+          name: repo.name,
           owner: org, //TODO verify this in not in the payload
           full_name: repo.full_name,
           has_issues: repo.has_issues,
