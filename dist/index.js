@@ -9482,7 +9482,7 @@ const repoActivity = await self.repositoryClient.getActivity(repo, since);
 Object.assign(activityResults, repoActivity);
 
 try {
-  const pulls = await self.repositoryClient.octokit.pulls.list({
+  const pulls = await self.octokit.pulls.list({
     owner: org,
     repo: repo.name,
     state: "all",
@@ -9490,7 +9490,7 @@ try {
   });
 
   for (const pr of pulls.data) {
-    const reviews = await self.repositoryClient.octokit.pulls.listReviews({
+    const reviews = await self.octokit.pulls.listReviews({
       owner: org,
       repo: repo.name,
       pull_number: pr.number,
