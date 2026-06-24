@@ -10072,12 +10072,7 @@ try {
 try {
   let prReviewCount = 0;
 
-  const pulls = await commitActivity.octokit.pulls.list({
-    owner: owner.login,
-    repo: name,
-    state: "all",
-    per_page: 100
-  });
+
 
   for (const pr of pulls.data) {
     const reviews = await commitActivity.octokit.pulls.listReviews({
