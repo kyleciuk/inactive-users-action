@@ -10068,6 +10068,39 @@ try {
     const prComments = await prActivity.getPullRequestCommentActivityFrom(owner, name, since);
     data[UserActivityAttributes.PULL_REQUEST_COMMENTS] = prComments[fullName];
 
+	// ✅ PR REVIEWS (INSERT HERE)
+try {
+  let prReviewCount = 0;
+
+  const pulls = await this.octokit.pulls.list({
+    owner: owner.login,
+    repo: name,
+    state: "all",
+    per_page: 100
+  });
+
+  for (const pr of pulls.data) {
+    const reviews = await this.octokit.pulls.listReviews({
+      owner: owner.login,
+      repo: name,
+      pull_number: pr.number,
+      per_page: 100
+    });
+
+    reviews.data.forEach(review => {
+      const login = review.user?.login;
+      if (login === fullName) {
+        prReviewCount++;
+      }
+    });
+  }
+
+  data[UserActivityAttributes.PULL_REQUEST_REVIEWS] = prReviewCount;
+
+} catch (err) {
+  console.log(`PR review fetch failed for ${fullName}: ${err.message}`);
+}
+
     const results = {};
     results[fullName] = data;
 
