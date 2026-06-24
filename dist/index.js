@@ -9475,7 +9475,7 @@ let activityResults = {};
 try {
   const pulls = await self.repositoryClient.client.pulls.list({
     owner: org,
-    repo: repo.name,
+    repo: reposToProcess[idx].name,
     state: "all",
     per_page: 100
   });
@@ -9483,7 +9483,7 @@ try {
   for (const pr of pulls.data) {
     const reviews = await self.repositoryClient.client.pulls.listReviews({
       owner: org,
-      repo: repo.name,
+      repo: reposToProcess[idx].name,
       pull_number: pr.number,
       per_page: 100
     });
@@ -9498,14 +9498,14 @@ try {
 
       activityResults[login].increment(
         UserActivityAttributes.PULL_REQUEST_REVIEWS,
-        repo.name,
+        reposToProcess[idx].name,
         1
       );
     });
   }
 
 } catch (err) {
-  console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
+  console.log(`PR review fetch failed for ${reposToProcess[idx].name}: ${err.message}`);
 }
 
 const orgUsers = await self.organizationClient.findUsers(org);
@@ -9904,7 +9904,7 @@ module.exports = class Organization {
       .then(repos => {
         console.log(`Processing ${repos.length} repositories`);
         return repos.map(repo => { return {
-          name: repo.name,
+          name: reposToProcess[idx].name,
           owner: org, //TODO verify this in not in the payload
           full_name: repo.full_name,
           has_issues: repo.has_issues,
