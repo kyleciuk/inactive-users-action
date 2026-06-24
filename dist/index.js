@@ -9472,6 +9472,10 @@ console.log(`Repos in this batch: ${reposToProcess.length}`);
 // activity collection
 let activityResults = {};
 
+for (let idx = 0; idx < reposToProcess.length; idx++) {
+  try {
+    const repo = reposToProcess[idx];
+	  
 const pulls = await self.repositoryClient.client.pulls.list({
   owner: org,
   repo: repo.name,
