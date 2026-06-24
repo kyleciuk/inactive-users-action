@@ -9507,10 +9507,10 @@ try {
 } catch (err) {
   console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
 }
-    
-    const orgUsers = await self.organizationClient.findUsers(org);
 
-    const userActivity = generateUserActivityData(activityResults);
+const orgUsers = await self.organizationClient.findUsers(org);
+
+const userActivity = generateUserActivityData(activityResults);
 
     orgUsers.forEach(user => {
       if (userActivity[user.login]) {
