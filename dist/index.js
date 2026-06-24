@@ -9561,17 +9561,17 @@ function generateUserActivityData(data) {
   // Use an object to ensure unique user to activity based on user key
   const results = {};
 
-  function process(repo, values, activityType) {
-    if (values) {
-      Object.keys(values).forEach(login => {
-        if (!results[login]) {
-          results[login] = new UserActivity(login);
-        }
+function process(repo, values, activityType) {
+  if (values) {
+    Object.keys(values).forEach(login => {
+      if (!activityResults[login]) {
+        activityResults[login] = new UserActivity(login);
+      }
 
-        results[login].increment(activityType, repo, values[login]);
-      })
-    }
+      activityResults[login].increment(activityType, repo, values[login]);
+    });
   }
+}
 
   Object.keys(data).forEach(repo => {
     const activity = data[repo];
