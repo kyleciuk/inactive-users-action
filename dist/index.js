@@ -9599,6 +9599,10 @@ module.exports = class UserActivity {
     get pullRequestComments() {
         return this._getTotal(UserActivityAttributes.PULL_REQUEST_COMMENTS);
     }
+	
+	get pullRequestReviews() {
+        return this._getTotal(UserActivityAttributes.PULL_REQUEST_REVIEWS);
+    }
 
     get issues() {
         return this._getTotal(UserActivityAttributes.ISSUES);
