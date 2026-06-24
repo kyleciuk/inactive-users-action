@@ -9995,9 +9995,6 @@ module.exports = class PullRequestActivity {
   }
 }
 
-
-
-
 /***/ }),
 
 /***/ 2490:
@@ -10007,13 +10004,19 @@ const CommitActivity = __webpack_require__(5448)
   , IssueActivity = __webpack_require__(3571)
   , PullRequestActivity = __webpack_require__(8626)
   , UserActivityAttributes = __webpack_require__(5543)
+;
 
 module.exports = class RepositoryActivity {
 
   constructor(octokit) {
-    this._commitActivity = new CommitActivity(octokit)
-    this._issueActivity = new IssueActivity(octokit)
-    this._pullRequestActivity = new PullRequestActivity(octokit)
+    this._octokit = octokit;
+    this._commitActivity = new CommitActivity(octokit);
+    this._issueActivity = new IssueActivity(octokit);
+    this._pullRequestActivity = new PullRequestActivity(octokit);
+  }
+
+  get octokit() {
+    return this._octokit;
   }
 
   async getActivity(repo, since) {
@@ -10026,73 +10029,43 @@ module.exports = class RepositoryActivity {
       , data = {}
     ;
 
-    //TODO need some validation around the parameters
-
     console.log(`Building repository activity for: ${fullName}...`);
 
-try {
-    const commits = await commitActivity.getCommitActivityFrom(owner, name, since);
-    data[UserActivityAttributes.COMMITS] = commits[fullName];
+    try {
+      const commits = await commitActivity.getCommitActivityFrom(owner, name, since);
+      data[UserActivityAttributes.COMMITS] = commits[fullName];
 
-    const issues = await issueActivity.getIssueActivityFrom(owner, name, since);
-    data[UserActivityAttributes.ISSUES] = issues[fullName];
+      const issues = await issueActivity.getIssueActivityFrom(owner, name, since);
+      data[UserActivityAttributes.ISSUES] = issues[fullName];
 
-    const issueComments = await issueActivity.getIssueCommentActivityFrom(owner, name, since);
-    data[UserActivityAttributes.ISSUE_COMMENTS] = issueComments[fullName];
+      const issueComments = await issueActivity.getIssueCommentActivityFrom(owner, name, since);
+      data[UserActivityAttributes.ISSUE_COMMENTS] = issueComments[fullName];
 
-    const prComments = await prActivity.getPullRequestCommentActivityFrom(owner, name, since);
-    data[UserActivityAttributes.PULL_REQUEST_COMMENTS] = prComments[fullName];
+      const prComments = await prActivity.getPullRequestCommentActivityFrom(owner, name, since);
+      data[UserActivityAttributes.PULL_REQUEST_COMMENTS] = prComments[fullName];
 
-	// ✅ PR REVIEWS (INSERT HERE)
-try {
-  let prReviewCount = 0;
+      const results = {};
+      results[fullName] = data;
+      console.log(`  completed.`);
+      return results;
 
+    } catch (err) {
+      const errMsg = String(err && err.message ? err.message : '').toLowerCase();
 
-
-  for (const pr of pulls.data) {
-    const reviews = await commitActivity.octokit.pulls.listReviews({
-      owner: owner.login,
-      repo: name,
-      pull_number: pr.number,
-      per_page: 100
-    });
-
-    reviews.data.forEach(review => {
-      const login = review.user?.login;
-      if (login === fullName) {
-        prReviewCount++;
-      }
-    });
-  }
-
-  data[UserActivityAttributes.PULL_REQUEST_REVIEWS] = prReviewCount;
-
-} catch (err) {
-  console.log(`PR review fetch failed for ${fullName}: ${err.message}`);
-}
-
-    const results = {};
-    results[fullName] = data;
-
-    console.log(`  completed.`);
-    return results;
-} catch (err) {
-    const errMsg = String(err && err.message ? err.message : '').toLowerCase();
-
-    // ✅ handle empty repo
-    if (errMsg.includes('empty')) {
+      if (errMsg.includes('empty')) {
         console.log(`  skipped empty repository: ${fullName}`);
         return {};
-    }
-
-    // ✅ handle 404 repo issues/comments
-    if (err.status === 404) {
+      }
+      if (err.status === 404) {
         console.log(`  skipped repo (404 Not Found): ${fullName}`);
         return {};
+      }
+      throw err;
     }
-
-    throw err;
+  }
 }
+
+/***/ }),
 
     // Need to avoid triggering the chain so using async now
     //
