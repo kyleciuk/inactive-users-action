@@ -9523,7 +9523,7 @@ try {
 
         throw err;
     }
-}	
+	
       const orgUsers = await self.organizationClient.findUsers(org);
 
     const userActivity = generateUserActivityData(activityResults);
