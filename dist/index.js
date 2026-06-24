@@ -9473,18 +9473,55 @@ let activityResults = {};
 
 for (let idx = 0; idx < reposToProcess.length; idx++) {
     try {
-        const repo = reposToProcess[idx];
+const repo = reposToProcess[idx];
 
-        const repoActivity = await self.repositoryClient.getActivity(repo, since);
-        Object.assign(activityResults, repoActivity);
+const repoActivity = await self.repositoryClient.getActivity(repo, since);
+Object.assign(activityResults, repoActivity);
 
-    } catch (err) {
-        const errMsg = String(err && err.message ? err.message : '').toLowerCase();
+try {
+  const pulls = await githubClient.pulls.list({
+    owner: org,
+    repo: repo.name,
+    state: "all",
+    per_page: 100
+  });
 
-        if (errMsg.includes('empty')) {
-            console.log(`  skipped empty repository (outer): ${reposToProcess[idx].full_name}`);
-            continue;
-        }
+  for (const pr of pulls.data) {
+    const reviews = await githubClient.pulls.listReviews({
+      owner: org,
+      repo: repo.name,
+      pull_number: pr.number,
+      per_page: 100
+    });
+
+    reviews.data.forEach(review => {
+      const login = review.user?.login;
+      if (!login) return;
+
+      // ✅ IMPORTANT: use activityResults (NOT results)
+      if (!activityResults[login]) {
+        activityResults[login] = new UserActivity(login);
+      }
+
+      activityResults[login].increment(
+        UserActivityAttributes.PULL_REQUEST_REVIEWS,
+        repo.name,
+        1
+      );
+    });
+  }
+
+} catch (err) {
+  console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
+}
+
+} catch (err) {
+  const errMsg = String(err && err.message ? err.message : '').toLowerCase();
+
+  if (errMsg.includes('empty')) {
+    console.log(`skipped empty repository (outer): ${reposToProcess[idx].full_name}`);
+    continue;
+  }
 
         if (err.status === 404 || errMsg.includes('not found')) {
             console.log(`  skipped repo (404 outer): ${reposToProcess[idx].full_name}`);
