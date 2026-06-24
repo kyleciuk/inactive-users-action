@@ -9513,7 +9513,7 @@ try {
 
   if (errMsg.includes('empty')) {
     console.log(`skipped empty repository (outer): ${reposToProcess[idx].full_name}`);
-    continue;
+    return;
   }
 
         if (err.status === 404 || errMsg.includes('not found')) {
