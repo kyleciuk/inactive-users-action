@@ -9507,24 +9507,8 @@ try {
 } catch (err) {
   console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
 }
-
-} catch (err) {
-  const errMsg = String(err && err.message ? err.message : '').toLowerCase();
-
-  if (errMsg.includes('empty')) {
-    console.log(`skipped empty repository (outer): ${reposToProcess[idx].full_name}`);
-    return;
-  }
-
-        if (err.status === 404 || errMsg.includes('not found')) {
-            console.log(`  skipped repo (404 outer): ${reposToProcess[idx].full_name}`);
-            return;
-        }
-
-        throw err;
-    }
-	
-      const orgUsers = await self.organizationClient.findUsers(org);
+    
+    const orgUsers = await self.organizationClient.findUsers(org);
 
     const userActivity = generateUserActivityData(activityResults);
 
