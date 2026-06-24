@@ -7,8 +7,6 @@ module.exports =
 
 // const github = require('@actions/github')
 //   , core = require('@actions/core')
-
-const { Octokit } = require("@octokit/rest");
 	
 const fs = __webpack_require__(5747)
   , path = __webpack_require__(5622)
@@ -9474,9 +9472,7 @@ console.log(`Repos in this batch: ${reposToProcess.length}`);
 // activity collection
 let activityResults = {};
 
-const reviewClient = new Octokit({
-  auth: self.token
-});
+const reviewClient = self.repositoryClient;
 
 for (let idx = 0; idx < reposToProcess.length; idx++) {
     try {
@@ -9486,7 +9482,7 @@ const repoActivity = await self.repositoryClient.getActivity(repo, since);
 Object.assign(activityResults, repoActivity);
 
 try {
-  const pulls = await reviewClient.pulls.list({
+  const pulls = await self.repositoryClient.octokit.pulls.list({
     owner: org,
     repo: repo.name,
     state: "all",
@@ -9505,7 +9501,6 @@ try {
       const login = review.user?.login;
       if (!login) return;
 
-      // ✅ IMPORTANT: use activityResults (NOT results)
       if (!activityResults[login]) {
         activityResults[login] = new UserActivity(login);
       }
