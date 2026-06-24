@@ -9518,7 +9518,7 @@ try {
 
         if (err.status === 404 || errMsg.includes('not found')) {
             console.log(`  skipped repo (404 outer): ${reposToProcess[idx].full_name}`);
-            continue;
+            return;
         }
 
         throw err;
