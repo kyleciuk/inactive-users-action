@@ -7,6 +7,9 @@ module.exports =
 
 // const github = require('@actions/github')
 //   , core = require('@actions/core')
+
+const { Octokit } = require("@octokit/rest");
+	
 const fs = __webpack_require__(5747)
   , path = __webpack_require__(5622)
   , core = __webpack_require__(2186)
@@ -9470,6 +9473,10 @@ console.log(`Repos in this batch: ${reposToProcess.length}`);
 
 // activity collection
 let activityResults = {};
+
+const reviewClient = new Octokit({
+  auth: self.token
+});
 
 for (let idx = 0; idx < reposToProcess.length; idx++) {
     try {
