@@ -9431,8 +9431,8 @@ function wrappy (fn, cb) {
 const Organization = __webpack_require__(2987)
   , RepositoryActivity = __webpack_require__(2490)
   , UserActivity = __webpack_require__(9245)
+  , UserActivityAttributes = __webpack_require__(5543)
 ;
-
 
 module.exports = class OrganizationUserActivity {
 
@@ -9451,114 +9451,109 @@ module.exports = class OrganizationUserActivity {
 
   async getUserActivity(org, since, batchSize = 500, batchNumber = 1) {
     const self = this;
+    const repositories = await self.organizationClient.getRepositories(org);
 
-    const repositories = await self.organizationClient.getRepositories(org)
-		
-// batching + sorting (your new code)
-repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
-	  
-const startIndex = (batchNumber - 1) * batchSize;
-const endIndex = startIndex + batchSize;
-  
-console.log(`Processing batch ${batchNumber}`);
-console.log(`Start index: ${startIndex}`);
-console.log(`End index: ${endIndex}`);
-console.log(`Total repositories: ${repositories.length}`);
-	  
-const reposToProcess = repositories.slice(startIndex, endIndex);
+    // Deterministic batching
+    repositories.sort((a, b) => a.full_name.localeCompare(b.full_name));
+    const startIndex = (batchNumber - 1) * batchSize;
+    const endIndex = startIndex + batchSize;
 
-console.log(`Repos in this batch: ${reposToProcess.length}`);
+    console.log(`Processing batch ${batchNumber}`);
+    console.log(`Start index: ${startIndex}`);
+    console.log(`End index: ${endIndex}`);
+    console.log(`Total repositories: ${repositories.length}`);
 
-// activity collection
-let activityResults = {};
+    const reposToProcess = repositories.slice(startIndex, endIndex);
+    console.log(`Repos in this batch: ${reposToProcess.length}`);
 
-for (let idx = 0; idx < reposToProcess.length; idx++) {
-  const repo = reposToProcess[idx]; 
-
-  try {
-    const pulls = await self.repositoryClient.client.pulls.list({
-      owner: org,
-      repo: repo.name, 
-      state: "all",
-      per_page: 100
-    });
-
-    for (const pr of pulls.data) {
-      const reviews = await self.repositoryClient.client.pulls.listReviews({
-        owner: org,
-        repo: repo.name, 
-        pull_number: pr.number,
-        per_page: 100
-      });
-
-      reviews.data.forEach(review => {
-        const login = review.user?.login;
-        if (!login) return;
-
-        if (!activityResults[login]) {
-          activityResults[login] = new UserActivity(login);
-        }
-
-        activityResults[login].increment(
-          UserActivityAttributes.PULL_REQUEST_REVIEWS,
-          repo.name, 
-          1
-        );
-      });
+    // ---- 1) Standard activity (commits, issues, issue comments, PR comments) ----
+    const activityData = {};
+    for (const repo of reposToProcess) {
+      try {
+        const repoActivity = await self.repositoryClient.getActivity(repo, since);
+        Object.assign(activityData, repoActivity);
+      } catch (err) {
+        console.log(`Activity fetch failed for ${repo.full_name}: ${err.message}`);
+      }
     }
 
-  } catch (err) {
-    console.log(`PR review fetch failed for ${repo.name}: ${err.message}`);
-  }
-}
-``
+    const userActivity = generateUserActivityData(activityData);
 
-const orgUsers = await self.organizationClient.findUsers(org);
+    // ---- 2) PR REVIEWS (added at the org level, not per-repo class) ----
+    for (const repo of reposToProcess) {
+      try {
+        const pulls = await self.repositoryClient.octokit.paginate(
+          'GET /repos/:owner/:repo/pulls',
+          { owner: org, repo: repo.name, state: 'all', per_page: 100 }
+        );
 
-const userActivity = generateUserActivityData(activityResults);
+        for (const pr of pulls) {
+          try {
+            const reviews = await self.repositoryClient.octokit.paginate(
+              'GET /repos/:owner/:repo/pulls/:pull_number/reviews',
+              { owner: org, repo: repo.name, pull_number: pr.number, per_page: 100 }
+            );
 
+            reviews.forEach(review => {
+              const login = review.user && review.user.login;
+              if (!login) return;
+              if (!userActivity[login]) {
+                userActivity[login] = new UserActivity(login);
+              }
+              userActivity[login].increment(
+                UserActivityAttributes.PULL_REQUEST_REVIEWS,
+                repo.name,
+                1
+              );
+            });
+          } catch (reviewErr) {
+            console.log(`PR review fetch failed for ${repo.name}#${pr.number}: ${reviewErr.message}`);
+          }
+        }
+      } catch (err) {
+        console.log(`PR list fetch failed for ${repo.name}: ${err.message}`);
+      }
+    }
+
+    // ---- 3) Merge org members so users with no activity still appear with email ----
+    const orgUsers = await self.organizationClient.findUsers(org);
     orgUsers.forEach(user => {
       if (userActivity[user.login]) {
         if (user.email && user.email.length > 0) {
-          userActivity[user.login] = user.email;
+          userActivity[user.login].email = user.email;
         }
       } else {
         const userData = new UserActivity(user.login);
         userData.email = user.email;
-
-        userActivity[user.login] = userData
+        userActivity[user.login] = userData;
       }
     });
 
-    // An array of user activity objects
     return Object.values(userActivity);
   }
 }
 
 function generateUserActivityData(data) {
   if (!data) {
-    return null
+    return {};
   }
-
-  // Use an object to ensure unique user to activity based on user key
   const results = {};
 
-function process(repo, values, activityType) {
-  if (values) {
+  function process(repo, values, activityType) {
+    if (!values) return;
     Object.keys(values).forEach(login => {
-      if (!activityResults[login]) {
-        activityResults[login] = new UserActivity(login);
+      if (!results[login]) {
+        results[login] = new UserActivity(login);
       }
-
-      activityResults[login].increment(activityType, repo, values[login]);
+      results[login].increment(activityType, repo, values[login]);
     });
   }
-}
 
   Object.keys(data).forEach(repo => {
     const activity = data[repo];
+    if (!activity) return;
     Object.keys(activity).forEach(activityType => {
-      process(repo, activity[activityType], activityType)
+      process(repo, activity[activityType], activityType);
     });
   });
 
