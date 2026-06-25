@@ -9479,23 +9479,69 @@ module.exports = class OrganizationUserActivity {
 
     const userActivity = generateUserActivityData(activityData);
 
-    // ---- 2) PR REVIEWS (added at the org level, not per-repo class) ----
+// ---- 2) PR REVIEWS via GraphQL (single query gets PRs + reviews together) ----
+    console.log(`Starting GraphQL PR review pass across ${reposToProcess.length} repos...`);
+
+    const prReviewsQuery = `
+      query($owner: String!, $name: String!, $cursor: String) {
+        repository(owner: $owner, name: $name) {
+          pullRequests(
+            first: 50,
+            after: $cursor,
+            orderBy: {field: UPDATED_AT, direction: DESC},
+            states: [OPEN, CLOSED, MERGED]
+          ) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              number
+              updatedAt
+              reviews(first: 100) {
+                nodes {
+                  author { login }
+                }
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    let prRepoIdx = 0;
     for (const repo of reposToProcess) {
+      prRepoIdx++;
+      console.log(`[PR reviews ${prRepoIdx}/${reposToProcess.length}] ${repo.full_name}...`);
+
+      let cursor = null;
+      let hasNextPage = true;
+      let totalReviews = 0;
+      let totalPRs = 0;
+      let stopPaging = false;
+
       try {
-        const pulls = await self.repositoryClient.octokit.paginate(
-          'GET /repos/:owner/:repo/pulls',
-          { owner: org, repo: repo.name, state: 'all', per_page: 100 }
-        );
+        while (hasNextPage && !stopPaging) {
+          const result = await self.repositoryClient.octokit.graphql(prReviewsQuery, {
+            owner: org,
+            name: repo.name,
+            cursor: cursor
+          });
 
-        for (const pr of pulls) {
-          try {
-            const reviews = await self.repositoryClient.octokit.paginate(
-              'GET /repos/:owner/:repo/pulls/:pull_number/reviews',
-              { owner: org, repo: repo.name, pull_number: pr.number, per_page: 100 }
-            );
+          const prData = result && result.repository && result.repository.pullRequests;
+          if (!prData) break;
 
-            reviews.forEach(review => {
-              const login = review.user && review.user.login;
+          for (const pr of prData.nodes) {
+            totalPRs++;
+
+            // Because we sort by UPDATED_AT DESC, once we cross the `since`
+            // threshold we can stop paginating this repo entirely.
+            if (since && pr.updatedAt && new Date(pr.updatedAt) < new Date(since)) {
+              stopPaging = true;
+              break;
+            }
+
+            if (!pr.reviews || !pr.reviews.nodes) continue;
+
+            pr.reviews.nodes.forEach(review => {
+              const login = review.author && review.author.login;
               if (!login) return;
               if (!userActivity[login]) {
                 userActivity[login] = new UserActivity(login);
@@ -9505,15 +9551,32 @@ module.exports = class OrganizationUserActivity {
                 repo.name,
                 1
               );
+              totalReviews++;
             });
-          } catch (reviewErr) {
-            console.log(`PR review fetch failed for ${repo.name}#${pr.number}: ${reviewErr.message}`);
           }
+
+          hasNextPage = prData.pageInfo.hasNextPage;
+          cursor = prData.pageInfo.endCursor;
         }
+
+        console.log(`  scanned ${totalPRs} PRs, collected ${totalReviews} reviews.`);
+
       } catch (err) {
-        console.log(`PR list fetch failed for ${repo.name}: ${err.message}`);
+        const errMsg = String(err && err.message ? err.message : '').toLowerCase();
+        if (errMsg.includes('not found') || errMsg.includes('could not resolve')) {
+          console.log(`  skipped repo (not accessible): ${repo.full_name}`);
+          continue;
+        }
+        if (errMsg.includes('rate limit') || errMsg.includes('secondary rate')) {
+          console.log(`  rate limited on ${repo.full_name} — continuing: ${err.message}`);
+          continue;
+        }
+        console.log(`  unexpected GraphQL error on ${repo.full_name}: ${err.message}`);
+        continue;
       }
     }
+
+    console.log(`GraphQL PR review pass complete.`);
 
     // ---- 3) Merge org members so users with no activity still appear with email ----
     const orgUsers = await self.organizationClient.findUsers(org);
@@ -9902,27 +9965,33 @@ module.exports = class Organization {
   getRepositories(org) {
     return this.octokit.paginate("GET /orgs/:org/repos", {org: org, per_page: 100})
       .then(repos => {
-        console.log(`Processing ${repos.length} repositories`);
-        return repos.map(repo => { return {
+        const total = repos.length;
+
+        // Skip archived & disabled repos — they rarely have new activity
+        // but still cost API calls to scan.
+        const active = repos.filter(r => !r.archived && !r.disabled);
+        const skipped = total - active.length;
+
+        console.log(`Found ${total} repositories; skipping ${skipped} archived/disabled, processing ${active.length}.`);
+
+        return active.map(repo => ({
           name: repo.name,
-          owner: org, //TODO verify this in not in the payload
+          owner: org,
           full_name: repo.full_name,
           has_issues: repo.has_issues,
           has_projects: repo.has_projects,
           url: repo.html_url,
-        }});
+        }));
       });
   }
 
   findUsers(org) {
     return this.octokit.paginate("GET /orgs/:org/members", {org: org, per_page: 100})
       .then(members => {
-        return members.map(member => {
-          return {
-            login: member.login,
-            email: member.email || ''
-          };
-        });
+        return members.map(member => ({
+          login: member.login,
+          email: member.email || ''
+        }));
       });
   }
 
