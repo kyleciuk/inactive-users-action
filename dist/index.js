@@ -9654,9 +9654,11 @@ module.exports = class UserActivity {
         this._email = email;
     }
 
-    get isActive() {
-        return (this.commits + this.pullRequestComments + this.issueComments + this.issues + this.pullRequestReviews) > 0;
+    
+     get isActive() {
+        return (this.commits + this.pullRequestComments + this.issueComments + this.issues + this.pullRequestReviews + this.pullRequests) > 0;
     }
+
 
     increment(attribute, repo, amount) {
         if (Object.values(UserActivityAttributes).indexOf(attribute) > -1) {
