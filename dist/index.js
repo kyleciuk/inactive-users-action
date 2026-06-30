@@ -9682,7 +9682,7 @@ module.exports = class UserActivity {
 	get pullRequestReviews() {
         return this._getTotal(UserActivityAttributes.PULL_REQUEST_REVIEWS);
     }
-
+	
     get issues() {
         return this._getTotal(UserActivityAttributes.ISSUES);
     }
