@@ -9559,7 +9559,7 @@ const prReviewsQuery = `
 
             if (!pr.reviews || !pr.reviews.nodes) continue;
 
-            pr.reviews.nodes.forEach(review => {
+			pr.reviews.nodes.forEach(review => {
               const login = review.author && review.author.login;
               if (!login) return;
               if (!userActivity[login]) {
@@ -9572,11 +9572,10 @@ const prReviewsQuery = `
               );
               totalReviews++;
             });
-
+          }
           hasNextPage = prData.pageInfo.hasNextPage;
           cursor = prData.pageInfo.endCursor;
         }
-
         console.log(`  scanned ${totalPRs} PRs, collected ${totalReviews} reviews.`);
 
       } catch (err) {
