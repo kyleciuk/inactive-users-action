@@ -9482,7 +9482,7 @@ module.exports = class OrganizationUserActivity {
 // ---- 2) PR REVIEWS via GraphQL (single query gets PRs + reviews together) ----
     console.log(`Starting GraphQL PR review pass across ${reposToProcess.length} repos...`);
 
-    const prReviewsQuery = `
+const prReviewsQuery = `
       query($owner: String!, $name: String!, $cursor: String) {
         repository(owner: $owner, name: $name) {
           pullRequests(
@@ -9495,6 +9495,8 @@ module.exports = class OrganizationUserActivity {
             nodes {
               number
               updatedAt
+              createdAt
+              author { login }
               reviews(first: 100) {
                 nodes {
                   author { login }
