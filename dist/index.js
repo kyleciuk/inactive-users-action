@@ -9540,6 +9540,23 @@ const prReviewsQuery = `
               break;
             }
 
+// Track PR authorship — only count PRs created within the `since` window
+            const prAuthorLogin = pr.author && pr.author.login;
+            const prCreatedAt = pr.createdAt;
+            if (prAuthorLogin && prCreatedAt) {
+              const prCreatedInWindow = !since || new Date(prCreatedAt) >= new Date(since);
+              if (prCreatedInWindow) {
+                if (!userActivity[prAuthorLogin]) {
+                  userActivity[prAuthorLogin] = new UserActivity(prAuthorLogin);
+                }
+                userActivity[prAuthorLogin].increment(
+                  UserActivityAttributes.PULL_REQUESTS,
+                  repo.name,
+                  1
+                );
+              }
+            }
+
             if (!pr.reviews || !pr.reviews.nodes) continue;
 
             pr.reviews.nodes.forEach(review => {
@@ -9555,7 +9572,6 @@ const prReviewsQuery = `
               );
               totalReviews++;
             });
-          }
 
           hasNextPage = prData.pageInfo.hasNextPage;
           cursor = prData.pageInfo.endCursor;
